@@ -1,5 +1,5 @@
 name: 'Release'
-description: 'Creates a GitHub Release and uploads release assets. Feature-compatible with softprops/action-gh-release (zero-dependency, Node 20).'
+description: 'Creates a GitHub Release and uploads release assets. Feature-compatible with softprops/action-gh-release (zero-dependency, Node 24).'
 author: MinimaxFlora
 
 branding:
