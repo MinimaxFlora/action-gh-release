@@ -1,0 +1,90 @@
+name: 'Release'
+description: 'Creates a GitHub Release and uploads release assets. Feature-compatible with softprops/action-gh-release (zero-dependency, Node 20).'
+author: MinimaxFlora
+
+branding:
+  icon: 'tag'
+  color: 'blue'
+
+inputs:
+  files:
+    description: >-
+      Newline-delimited globs of files to upload to the release.
+      e.g. `dist/*.tar.gz` or `**/*.img.gz`
+    required: false
+  name:
+    description: 'Name of the release'
+    required: false
+  body:
+    description: 'Text describing the contents of the release'
+    required: false
+  body_path:
+    description: 'Path to load the body of the release from'
+    required: false
+  draft:
+    description: 'Flag indicating whether or not the release is a draft'
+    required: false
+    default: 'false'
+  prerelease:
+    description: 'Flag indicating whether or not the release is a prerelease'
+    required: false
+    default: 'false'
+  tag_name:
+    description: >-
+      Tag name for the release. If omitted, the tag of the current ref
+      (push event) is used; a workflow_dispatch run must provide it.
+    required: false
+  target_commitish:
+    description: 'Commitish value that determines where the Git tag is created from'
+    required: false
+  token:
+    description: 'GitHub token with release write permission'
+    required: false
+    default: ${{ github.token }}
+  fail_on_unmatched_files:
+    description: 'Whether to fail if any of the files globs are unmatched'
+    required: false
+    default: 'false'
+  generate_release_notes:
+    description: 'Whether to automatically generate the name and body for this release'
+    required: false
+    default: 'false'
+  discussion_category_name:
+    description: 'Category to use for the release discussion'
+    required: false
+  append_body:
+    description: 'Append to an existing body instead of replacing it'
+    required: false
+    default: 'false'
+  make_latest:
+    description: "Controls how the 'latest' flag is set. Can be 'true', 'false' or 'legacy'"
+    required: false
+    default: 'true'
+  update_release_body:
+    description: 'Whether to update the release body if a release with the same tag already exists'
+    required: false
+    default: 'false'
+  update_release_body_if_draft:
+    description: 'Whether to update the release body if a draft release with the same tag already exists'
+    required: false
+    default: 'false'
+  repository:
+    description: 'Repository to target, in the format `owner/repo`'
+    required: false
+    default: ${{ github.repository }}
+
+outputs:
+  url:
+    description: 'GitHub.com URL of the release'
+  id:
+    description: 'Release ID'
+  upload_url:
+    description: 'Upload URL for the release assets'
+  browser_download_url:
+    description: 'Browser download URL of the release'
+  assets:
+    description: 'JSON array of uploaded assets'
+
+runs:
+  using: node20
+  main: index.js
