@@ -289,12 +289,27 @@ async function main() {
   }
   console.log(`Matched ${files.length} file(s) for upload`);
 
+  // 获取 release 已有资产，同名的先删除再上传（GitHub 不允许重名资产，重复构建会 422）
+  let existingAssets = [];
+  try {
+    const page = await gh(`${base}/releases/${release.id}/assets?per_page=100`, { token });
+    existingAssets = Array.isArray(page) ? page : [];
+  } catch (e) {
+    console.warn(`::warning::无法获取已有资产列表: ${e.message}`);
+  }
+
   const assets = [];
   const uploadUrl = release.upload_url.replace('{?name,label}', '');
   for (const f of files) {
     const name = path.basename(f);
     const stat = fs.statSync(f);
     const buf = fs.readFileSync(f);
+    // 同名资产存在 -> 先删除（覆盖旧版本）
+    const dup = existingAssets.filter((a) => a.name === name);
+    for (const a of dup) {
+      console.log(`Asset already exists, replacing: ${name} (asset id=${a.id})`);
+      await gh(`${base}/releases/assets/${a.id}`, { method: 'DELETE', token });
+    }
     console.log(`Uploading ${name} (${(stat.size / 1024 / 1024).toFixed(2)} MB)...`);
     const asset = await gh(`${uploadUrl}?name=${encodeURIComponent(name)}`, {
       method: 'POST',
