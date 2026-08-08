@@ -1,7 +1,7 @@
 # action-gh-release
 
 GitHub Action：创建 GitHub Release 并上传构建产物。功能对齐 [softprops/action-gh-release](https://github.com/softprops/action-gh-release)，
-**零依赖**（Node 20 内置 fetch 实现，无 node_modules），可直接 `uses:` 引用。
+**零依赖**（Node 24 内置 fetch 实现，无 node_modules），可直接 `uses:` 引用。
 
 ## 功能
 
@@ -68,7 +68,7 @@ GitHub Action：创建 GitHub Release 并上传构建产物。功能对齐 [soft
 ## 与 softprops/action-gh-release 的差异
 
 - 零依赖（原版使用 `@actions/core` / `@actions/glob` 并打包 `dist`）
-- 使用 Node 20 内置 `fetch`，无需 `ncc` 打包步骤
+- 使用 Node 24 内置 `fetch`，无需 `ncc` 打包步骤
 - glob 支持 `*` / `**` / `?` / `[abc]`（覆盖常见用法）
 
 ## 开发与测试

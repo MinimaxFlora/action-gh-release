@@ -162,14 +162,21 @@ function expandGlobs(patterns) {
   for (const p of patterns) {
     const clean = p.replace(/^\.\//, '');
     if (!/[*?[]/.test(clean)) {
-      const abs = path.resolve(WS, clean);
+      const abs = path.isAbsolute(clean) ? clean : path.resolve(WS, clean);
       if (fs.existsSync(abs)) files.add(abs);
       else unmatched.push(p);
       continue;
     }
-    const re = globToRegExp(clean);
+    // 支持绝对路径与相对路径 glob：把第一个通配符前的部分作为根目录，
+    // 其余部分作为相对该根目录的匹配模式。
+    const starIdx = clean.search(/[*?[]/);
+    const lastSlash = clean.lastIndexOf('/', starIdx);
+    const base = lastSlash >= 0 ? clean.slice(0, lastSlash + 1) : '';
+    const rest = clean.slice(lastSlash + 1);
+    const absBase = path.isAbsolute(base) ? base : path.join(WS, base);
+    const re = globToRegExp(rest);
     const all = [];
-    walk(WS, '', all);
+    walk(absBase, '', all);
     let hit = 0;
     for (const f of all) {
       if (re.test(f.rel)) { files.add(f.full); hit++; }
@@ -312,3 +319,5 @@ main().catch((e) => {
   console.error(`::error::${e.message}`);
   process.exit(1);
 });
+
+module.exports = { expandGlobs, globToRegExp };

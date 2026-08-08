@@ -86,5 +86,5 @@ outputs:
     description: 'JSON array of uploaded assets'
 
 runs:
-  using: node20
+  using: node24
   main: index.js
