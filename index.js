@@ -217,6 +217,10 @@ async function main() {
   const updateReleaseBody = boolInput('update_release_body');
   const updateReleaseBodyIfDraft = boolInput('update_release_body_if_draft');
   const failOnUnmatched = boolInput('fail_on_unmatched_files');
+  const replacesArtifacts = boolInput('replaces_artifacts', true);
+  const removeArtifacts = boolInput('remove_artifacts');
+  const artifactErrorsFailBuild = boolInput('artifact_errors_fail_build');
+  const skipIfReleaseExists = boolInput('skip_if_release_exists');
 
   // body: body_path takes precedence over body
   let body = input('body');
@@ -258,6 +262,16 @@ async function main() {
     console.log(`Created release: ${release.html_url}`);
   } else {
     // ---- existing release: optionally update body ----
+    if (skipIfReleaseExists) {
+      console.log(`Release already exists (id=${release.id}), skip_if_release_exists is enabled - skipping`);
+      setOutput('url', release.html_url);
+      setOutput('id', release.id);
+      setOutput('upload_url', release.upload_url);
+      setOutput('browser_download_url', release.browser_download_url || release.html_url);
+      setOutput('assets', '[]');
+      console.log('::endgroup::');
+      return;
+    }
     console.log(`Release already exists (id=${release.id}), checking update policy`);
     const shouldUpdate =
       updateReleaseBody || (updateReleaseBodyIfDraft && release.draft === true);
@@ -289,7 +303,7 @@ async function main() {
   }
   console.log(`Matched ${files.length} file(s) for upload`);
 
-  // 获取 release 已有资产，同名的先删除再上传（GitHub 不允许重名资产，重复构建会 422）
+  // 获取 release 已有资产
   let existingAssets = [];
   try {
     const page = await gh(`${base}/releases/${release.id}/assets?per_page=100`, { token });
@@ -298,27 +312,44 @@ async function main() {
     console.warn(`::warning::无法获取已有资产列表: ${e.message}`);
   }
 
+  // remove_artifacts: 删除全部已有资产
+  if (removeArtifacts && existingAssets.length > 0) {
+    console.log(`remove_artifacts enabled, deleting ${existingAssets.length} existing asset(s)...`);
+    for (const a of existingAssets) {
+      await gh(`${base}/releases/assets/${a.id}`, { method: 'DELETE', token });
+    }
+    existingAssets = [];
+  }
+
   const assets = [];
   const uploadUrl = release.upload_url.replace('{?name,label}', '');
   for (const f of files) {
     const name = path.basename(f);
     const stat = fs.statSync(f);
     const buf = fs.readFileSync(f);
-    // 同名资产存在 -> 先删除（覆盖旧版本）
-    const dup = existingAssets.filter((a) => a.name === name);
-    for (const a of dup) {
-      console.log(`Asset already exists, replacing: ${name} (asset id=${a.id})`);
-      await gh(`${base}/releases/assets/${a.id}`, { method: 'DELETE', token });
+    // replaces_artifacts: 同名资产先删除再上传（GitHub 不允许重名资产，重复构建会 422）
+    if (replacesArtifacts) {
+      const dup = existingAssets.filter((a) => a.name === name);
+      for (const a of dup) {
+        console.log(`Asset already exists, replacing: ${name} (asset id=${a.id})`);
+        await gh(`${base}/releases/assets/${a.id}`, { method: 'DELETE', token });
+      }
+      existingAssets = existingAssets.filter((a) => a.name !== name);
     }
     console.log(`Uploading ${name} (${(stat.size / 1024 / 1024).toFixed(2)} MB)...`);
-    const asset = await gh(`${uploadUrl}?name=${encodeURIComponent(name)}`, {
-      method: 'POST',
-      body: buf,
-      contentType: 'application/octet-stream',
-      token,
-    });
-    assets.push(asset);
-    console.log(`Uploaded: ${name}`);
+    try {
+      const asset = await gh(`${uploadUrl}?name=${encodeURIComponent(name)}`, {
+        method: 'POST',
+        body: buf,
+        contentType: 'application/octet-stream',
+        token,
+      });
+      assets.push(asset);
+      console.log(`Uploaded: ${name}`);
+    } catch (e) {
+      if (artifactErrorsFailBuild) throw e;
+      console.warn(`::warning::Failed to upload ${name}: ${e.message}`);
+    }
   }
 
   // ---- outputs ----

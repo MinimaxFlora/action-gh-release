@@ -52,6 +52,10 @@ GitHub Action：创建 GitHub Release 并上传构建产物。功能对齐 [soft
 | `update_release_body` | ❌ | `false` | tag 已存在时更新 body |
 | `update_release_body_if_draft` | ❌ | `false` | tag 已存在且为草稿时更新 body |
 | `fail_on_unmatched_files` | ❌ | `false` | glob 无匹配文件时是否失败 |
+| `replaces_artifacts` | ❌ | `true` | 上传前删除同名旧资产（重复构建不再 422） |
+| `remove_artifacts` | ❌ | `false` | 上传前删除 release 全部旧资产 |
+| `artifact_errors_fail_build` | ❌ | `false` | 资产上传失败时是否失败构建（默认仅警告） |
+| `skip_if_release_exists` | ❌ | `false` | tag 已有 release 时直接跳过 |
 | `token` | ❌ | `github.token` | GitHub Token（需 `contents: write` 权限） |
 | `repository` | ❌ | 当前仓库 | 目标仓库 `owner/repo` |
 

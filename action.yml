@@ -45,6 +45,22 @@ inputs:
     description: 'Whether to fail if any of the files globs are unmatched'
     required: false
     default: 'false'
+  replaces_artifacts:
+    description: 'Replace existing release assets with the same name before uploading (fixes 422 on re-build)'
+    required: false
+    default: 'true'
+  remove_artifacts:
+    description: 'Delete ALL existing release assets before uploading the new ones'
+    required: false
+    default: 'false'
+  artifact_errors_fail_build:
+    description: 'Fail the build if an artifact upload fails (default: only warn and continue)'
+    required: false
+    default: 'false'
+  skip_if_release_exists:
+    description: 'Skip the action if a release already exists for the tag'
+    required: false
+    default: 'false'
   generate_release_notes:
     description: 'Whether to automatically generate the name and body for this release'
     required: false
